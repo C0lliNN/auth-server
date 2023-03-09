@@ -1,3 +1,3 @@
-module C0lliNN/oauth2
+module C0lliNN/auth-server
 
 go 1.19
