@@ -8,10 +8,11 @@ import (
 
 type Server struct {
 	auth auth.Auth
+	addr string
 }
 
-func NewServer(auth auth.Auth) Server {
-	return Server{auth: auth}
+func NewServer(auth auth.Auth, addr string) Server {
+	return Server{auth: auth, addr: addr}
 }
 
 func (s Server) Start() error {
@@ -36,7 +37,7 @@ func (s Server) Start() error {
 
 	server := &http.Server{
 		Handler: r,
-		Addr:    "localhost:8000",
+		Addr:    s.addr,
 	}
 
 	return server.ListenAndServe()
