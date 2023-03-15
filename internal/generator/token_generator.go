@@ -14,6 +14,6 @@ func NewJWTGenerator(secret HMACSecret) *JWTGenerator {
 	return &JWTGenerator{secret: secret}
 }
 
-func (w *JWTGenerator) Generate() (string, error) {
-	return jwt.New(jwt.SigningMethodHS256).SignedString([]byte(w.secret))
+func (w *JWTGenerator) Generate(claims map[string]interface{}) (string, error) {
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims(claims)).SignedString([]byte(w.secret))
 }

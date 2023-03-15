@@ -20,7 +20,7 @@ type IDGenerator interface {
 }
 
 type TokenGenerator interface {
-	Generate() (string, error)
+	Generate(map[string]interface{}) (string, error)
 }
 
 type Hasher interface {
@@ -61,7 +61,7 @@ type TokenResponse struct {
 	AccessToken  string `json:"access_token"`
 	TokenType    string `json:"token_type"`
 	ExpiresIn    int64  `json:"expires_in"`
-	RefreshToken string `json:"refresh_token"`
+	RefreshToken string `json:"refresh_token,omitempty"`
 }
 
 func NewAuth(c Config) Auth {
@@ -132,7 +132,12 @@ func (a Auth) ObtainToken(ctx context.Context, req ObtainTokenRequest) (TokenRes
 		return TokenResponse{}, fmt.Errorf("invalid secret")
 	}
 
-	accessToken, err := a.TokenGenerator.Generate()
+	expirationTime := time.Now().Add(time.Hour).Unix()
+
+	accessToken, err := a.TokenGenerator.Generate(map[string]interface{}{
+		"client_id": client.ID,
+		"exp":       expirationTime,
+	})
 	if err != nil {
 		return TokenResponse{}, err
 	}
@@ -141,11 +146,8 @@ func (a Auth) ObtainToken(ctx context.Context, req ObtainTokenRequest) (TokenRes
 		ID:             a.IDGenerator.NewID(),
 		Type:           "Bearer",
 		AccessToken:    accessToken,
-		RefreshToken:   "something_for_now",
-		State:          "",
-		Scope:          "",
 		CreatedAt:      time.Now().Unix(),
-		ExpirationTime: time.Now().Add(time.Hour).Unix(),
+		ExpirationTime: expirationTime,
 	}
 
 	if err = a.TokenRepository.Save(ctx, token); err != nil {
