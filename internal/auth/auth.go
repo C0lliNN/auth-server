@@ -83,7 +83,8 @@ func (a Auth) CreateNewClient(ctx context.Context, req CreateClientRequest) (Cli
 	}
 
 	if client.Type == Confidential {
-		client.Secret = &req.Secret
+		hashedPassword := a.Hasher.Hash(req.Secret)
+		client.Secret = &hashedPassword
 	}
 
 	if err := a.ClientRepository.Save(ctx, client); err != nil {
