@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"fmt"
+	"time"
 )
 
 type ClientRepository interface {
@@ -11,11 +12,15 @@ type ClientRepository interface {
 }
 
 type TokenRepository interface {
-	Save(ctx context.Context, c Client) error
+	Save(ctx context.Context, t Token) error
 }
 
 type IDGenerator interface {
 	NewID() string
+}
+
+type TokenGenerator interface {
+	Generate() (string, error)
 }
 
 type Hasher interface {
@@ -26,6 +31,7 @@ type Config struct {
 	ClientRepository ClientRepository
 	TokenRepository  TokenRepository
 	IDGenerator      IDGenerator
+	TokenGenerator   TokenGenerator
 	Hasher           Hasher
 }
 
@@ -39,10 +45,23 @@ type CreateClientRequest struct {
 	RedirectURI string
 }
 
+type ObtainTokenRequest struct {
+	GrantType    Grant  `json:"grant_type"`
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+}
+
 type ClientResponse struct {
 	ID          string
 	Type        string
 	RedirectURI *string
+}
+
+type TokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int64  `json:"expires_in"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 func NewAuth(c Config) Auth {
@@ -96,4 +115,62 @@ func (a Auth) createClientResponse(client Client) ClientResponse {
 		Type:        client.Type.String(),
 		RedirectURI: client.RedirectURI,
 	}
+}
+
+func (a Auth) ObtainToken(ctx context.Context, req ObtainTokenRequest) (TokenResponse, error) {
+	if err := a.validateObtainTokenRequest(req); err != nil {
+		return TokenResponse{}, err
+	}
+
+	client, err := a.ClientRepository.FindByID(ctx, req.ClientID)
+	if err != nil {
+		return TokenResponse{}, err
+	}
+
+	if *client.Secret != a.Hasher.Hash(req.ClientSecret) {
+		return TokenResponse{}, fmt.Errorf("invalid secret")
+	}
+
+	accessToken, err := a.TokenGenerator.Generate()
+	if err != nil {
+		return TokenResponse{}, err
+	}
+
+	token := Token{
+		ID:             a.IDGenerator.NewID(),
+		Type:           "Bearer",
+		AccessToken:    accessToken,
+		RefreshToken:   "something_for_now",
+		State:          "",
+		Scope:          "",
+		CreatedAt:      time.Now().Unix(),
+		ExpirationTime: time.Now().Add(time.Hour).Unix(),
+	}
+
+	if err = a.TokenRepository.Save(ctx, token); err != nil {
+		return TokenResponse{}, err
+	}
+
+	return TokenResponse{
+		AccessToken:  token.AccessToken,
+		TokenType:    token.Type,
+		ExpiresIn:    token.ExpiresIn(),
+		RefreshToken: token.RefreshToken,
+	}, nil
+}
+
+func (a Auth) validateObtainTokenRequest(req ObtainTokenRequest) error {
+	if req.GrantType == "" {
+		return fmt.Errorf("the grant_type is required")
+	}
+
+	if req.ClientID == "" {
+		return fmt.Errorf("the client_id is required")
+	}
+
+	if req.GrantType == ClientCredentials && req.ClientSecret == "" {
+		return fmt.Errorf("the client_secret must be provided when grant_type is client_credentials")
+	}
+
+	return nil
 }
