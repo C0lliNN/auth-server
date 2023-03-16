@@ -1,0 +1,9 @@
+
+openconnectid:
+    key: test
+    issuer: http://localhost:9998/
+    webclientsecret: test
+    apiclientsecret: test
+
+http:
+    address: localhost:9998
