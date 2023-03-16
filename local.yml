@@ -1,9 +1,0 @@
-database:
-  uri: "mongodb://localhost:27017/auth-server"
-  name: "auth-server"
-
-token:
-  secret: some-really-hard-secret
-
-server:
-  address: "localhost:8000"
