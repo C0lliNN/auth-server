@@ -21,11 +21,14 @@
                 <input id="password" name="password" class="form-control form-control-lg">
             </div>
 
-            <div class="alert alert-danger" role="alert">
+            {{ if .Error}}
+            <div class="alert alert-danger mt-3" role="alert">
                 {{.Error}}
             </div>
+            {{ end}}
 
-            <button class="btn btn-lg btn-success" type="submit">Login</button>
+
+            <button class="btn btn-lg btn-success mt-3" type="submit">Login</button>
         </form>
     </body>
 </html>`

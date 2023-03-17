@@ -49,7 +49,7 @@ func main() {
 
 	storage.RegisterClients(
 		storage.NativeClient("native"),
-		storage.WebClient("web", config.OpenConnectID.WebClientSecret),
+		storage.WebClient("web", config.OpenConnectID.WebClientSecret, "http://localhost:3000/callback"),
 		storage.WebClient("api", config.OpenConnectID.APIClientSecret),
 	)
 

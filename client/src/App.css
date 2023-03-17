@@ -1,0 +1,19 @@
+* {
+  box-sizing: border-box;
+}
+
+.App {
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.login-btn {
+  text-decoration: none;
+  padding: 20px 20px;
+  background-color: green;
+  color: white;
+  border-radius: 12px;
+}
